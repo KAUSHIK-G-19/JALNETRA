@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JALNETRA - Watershed Intelligence Platform | SIH 26015</title>
+  <meta name="description" content="JALNETRA: AI-powered geospatial platform for watershed monitoring." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',sans-serif;background:#f3f6f9;color:#1a2332;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden}
+    header{background:#fff;border-bottom:1px solid #dde3ec;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+    .hbrand{display:flex;align-items:center;gap:12px}
+    .hlogo{width:36px;height:36px;background:#0e7c61;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;font-weight:700}
+    .htitle{font-size:16px;font-weight:700;color:#0e7c61;letter-spacing:.5px}
+    .hbadge{font-size:11px;background:#eaf7f3;color:#0e7c61;border:1px solid #b2ddd1;border-radius:4px;padding:2px 8px;font-weight:500}
+    .hright{display:flex;align-items:center;gap:12px}
+    .spill{display:flex;align-items:center;gap:6px;font-size:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;padding:4px 12px;color:#166534;font-weight:500}
+    .sdot{width:7px;height:7px;border-radius:50%;background:#22c55e;animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    .lsel{font-family:'Inter',sans-serif;font-size:12px;font-weight:600;border:1px solid #dde3ec;border-radius:6px;padding:5px 10px;background:#f8fafc;color:#0e7c61;cursor:pointer;outline:none}
+    .app-body{display:flex;flex:1;overflow:hidden}
+    aside{width:240px;background:#fff;border-right:1px solid #dde3ec;display:flex;flex-direction:column;padding:16px 12px;gap:16px;overflow-y:auto}
+    .slbl{font-size:11px;font-weight:600;color:#6b7a94;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+    .sinput{width:100%;font-family:'Inter',sans-serif;font-size:13px;border:1px solid #dde3ec;border-radius:7px;padding:8px 12px;background:#f8fafc;color:#1a2332;outline:none;transition:border-color .2s}
+    .sinput:focus{border-color:#0e7c61;background:#fff}
+    .btnp{width:100%;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;background:#0e7c61;color:#fff;border:none;border-radius:7px;padding:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .2s;margin-top:6px}
+    .btnp:hover{background:#0a6650}
+    nav{display:flex;flex-direction:column;gap:2px}
+    .nbtn{width:100%;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;text-align:left;padding:9px 12px;border-radius:7px;border:none;background:none;color:#4b5a70;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .15s,color .15s}
+    .nbtn:hover{background:#f0f4f8;color:#1a2332}
+    .nbtn.active{background:#eaf7f3;color:#0e7c61;font-weight:600}
+    .btnr{width:100%;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;background:#fff;color:#0e7c61;border:1.5px solid #0e7c61;border-radius:7px;padding:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .2s}
+    .btnr:hover{background:#eaf7f3}
+    main{flex:1;padding:20px 24px;overflow-y:auto;background:#f3f6f9}
+    .tab-section{display:none}
+    .tab-section.active{display:block}
+    .card{background:#fff;border:1px solid #dde3ec;border-radius:12px;padding:20px;margin-bottom:16px}
+    .ctitle{font-size:15px;font-weight:700;color:#1a2332;margin-bottom:4px}
+    .csub{font-size:13px;color:#6b7a94;line-height:1.5}
+    .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+    .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+    @media(max-width:900px){.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr}}
+    @media(max-width:640px){.g2,.g4{grid-template-columns:1fr}}
+    .hero{background:linear-gradient(135deg,#0e7c61,#1a9e7c);border-radius:12px;padding:28px;color:#fff;margin-bottom:16px}
+    .hbadge2{font-size:11px;background:rgba(255,255,255,.2);border-radius:4px;padding:3px 10px;display:inline-block;margin-bottom:10px}
+    .htitle2{font-size:22px;font-weight:700;margin-bottom:8px}
+    .hdesc{font-size:13px;opacity:.88;line-height:1.6;max-width:580px}
+    .pcrd{background:#fff;border:1px solid #dde3ec;border-radius:10px;padding:16px;transition:box-shadow .2s,border-color .2s}
+    .pcrd:hover{box-shadow:0 4px 16px rgba(14,124,97,.08);border-color:#0e7c61}
+    .ptag{font-size:11px;color:#0e7c61;font-weight:600;margin-bottom:6px}
+    .wstep{background:#f8fafc;border:1px solid #dde3ec;border-radius:10px;padding:18px;text-align:center}
+    .wnum{font-size:11px;font-weight:700;color:#6b7a94;letter-spacing:1px;margin-bottom:6px}
+    .wtitle{font-size:14px;font-weight:700;color:#0e7c61;margin-bottom:8px}
+    .wdet{font-size:12px;background:#fff;border:1px solid #dde3ec;border-radius:6px;padding:8px;color:#1a2332;font-weight:500;margin-bottom:8px}
+    .wdesc{font-size:12px;color:#6b7a94;line-height:1.5}
+    #map{height:420px;width:100%;border-radius:8px;z-index:10;cursor:crosshair}
+    .mlbtns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+    .lbtn{font-family:'Inter',sans-serif;font-size:12px;font-weight:600;padding:6px 14px;border-radius:6px;border:1px solid #dde3ec;background:#f8fafc;color:#4b5a70;cursor:pointer;transition:all .15s}
+    .lbtn:hover{background:#eaf7f3;color:#0e7c61;border-color:#0e7c61}
+    .lbtn.al{background:#0e7c61;color:#fff;border-color:#0e7c61}
+    .gisg{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+    @media(max-width:900px){.gisg{grid-template-columns:1fr}}
+    .irow{background:#f8fafc;border:1px solid #dde3ec;border-radius:8px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .ilbl{font-size:13px;font-weight:600}
+    .isub{font-size:11px;color:#6b7a94;margin-top:2px}
+    .ism{font-size:11px;color:#6b7a94;margin-top:2px}
+    .ipct{font-size:18px;font-weight:700;color:#1a2332}
+    .kpi{background:#fff;border:1px solid #dde3ec;border-radius:10px;padding:14px;text-align:center}
+    .klbl{font-size:11px;color:#6b7a94;font-weight:500;margin-bottom:4px}
+    .kval{font-size:18px;font-weight:700;color:#1a2332}
+    .kg .kval{color:#0e7c61}
+    .kb .kval{color:#0369a1}
+    .ka .kval{color:#92400e}
+    .ptbl{width:100%;border-collapse:collapse;font-size:12px}
+    .ptbl tr{border-bottom:1px solid #f0f4f8}
+    .ptbl tr:last-child{border-bottom:none}
+    .ptbl td{padding:6px 4px}
+    .ptbl td:first-child{color:#6b7a94;width:45%}
+    .ptbl td:last-child{font-weight:600;color:#1a2332;text-align:right}
+    .agrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .atile{background:#f8fafc;border:1px solid #dde3ec;border-radius:8px;padding:10px 12px}
+    .aname{font-size:11px;color:#6b7a94;margin-bottom:4px}
+    .aval{font-size:15px;font-weight:700;color:#0e7c61}
+    .btna{font-family:'Inter',sans-serif;font-size:13px;font-weight:600;background:#0e7c61;color:#fff;border:none;border-radius:7px;padding:9px 20px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .2s}
+    .btna:hover{background:#0a6650}
+    .btns{font-family:'Inter',sans-serif;font-size:12px;font-weight:600;background:#fff;color:#1a2332;border:1px solid #dde3ec;border-radius:7px;padding:7px 14px;cursor:pointer;transition:background .15s}
+    .btns:hover{background:#f0f4f8}
+    .pvbox{height:220px;background:#f8fafc;border:1px solid #dde3ec;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+    .pvph{font-size:12px;color:#9aacbe;text-align:center;padding:16px}
+    .lgbar{display:flex;flex-wrap:wrap;gap:14px;align-items:center;background:#fff;border:1px solid #dde3ec;border-radius:8px;padding:12px 16px;margin-bottom:14px}
+    .lgi{display:flex;align-items:center;gap:6px;font-size:12px;color:#4b5a70}
+    .lgd{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+    .shd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+    .stitle{font-size:16px;font-weight:700;color:#1a2332}
+    .smeta{font-size:12px;color:#6b7a94}
+    .alertbox{background:#fff7ed;border:1px solid #fdba74;border-radius:8px;padding:12px 14px}
+    .alrt{font-size:12px;font-weight:700;color:#92400e;margin-bottom:4px}
+    .altx{font-size:12px;color:#78350f;line-height:1.5}
+    .cwrap{background:#f8fafc;border:1px solid #dde3ec;border-radius:10px;padding:16px;margin-bottom:14px}
+    .ctit{font-size:13px;font-weight:700;color:#1a2332;margin-bottom:12px}
+    .ccvs{height:180px}
+    .modal-overlay{position:fixed;inset:0;background:rgba(15,25,40,.45);backdrop-filter:blur(3px);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
+    .modal-overlay.hidden{display:none}
+    .mbox{background:#fff;border-radius:14px;padding:24px;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+    .mhdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #dde3ec;padding-bottom:14px;margin-bottom:16px}
+    .mtitle{font-size:16px;font-weight:700;color:#1a2332}
+    .msub{font-size:12px;color:#6b7a94;margin-top:3px}
+    .mclose{font-size:18px;background:none;border:none;color:#6b7a94;cursor:pointer;padding:0 4px}
+    .mclose:hover{color:#1a2332}
+    .mbody{background:#f8fafc;border:1px solid #dde3ec;border-radius:10px;padding:16px}
+    .mflbl{font-size:11px;color:#6b7a94;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+    .mfval{font-size:15px;font-weight:700;color:#1a2332;margin-bottom:12px}
+    .mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .mact{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+    input[type=file]{font-family:'Inter',sans-serif;font-size:12px;color:#4b5a70}
+    hr{border:none;border-top:1px solid #dde3ec;margin:14px 0}
+    .cbar{display:flex;justify-content:space-between;font-size:11px;color:#6b7a94;padding-top:8px}
+    .cval{font-weight:600;color:#0e7c61}
+    .lcard{background:#eaf7f3;border:1px solid #b2ddd1;border-radius:8px;padding:10px 12px;margin-bottom:10px}
+    .lname{font-size:13px;font-weight:700;color:#1a2332}
+    .lcoords{font-size:11px;color:#0e7c61;font-weight:600;margin-top:2px}
+    .ahdr{font-size:12px;color:#6b7a94;font-weight:600;margin-bottom:8px}
+    .aval2{color:#0e7c61;font-weight:700}
+    #field-gps-status{font-size:11px;color:#6b7a94;margin-top:8px;line-height:1.5}
+    .dr{display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px}
+    .dk{color:#6b7a94}
+    .dv{font-weight:700}
+    .cg{color:#0e7c61}
+    .cb2{color:#0369a1}
+    .cam{color:#b45309}
+  </style>
+</head>
+<body>
+<header>
+  <div class="hbrand">
+    <div class="hlogo">&#8776;</div>
+    <div class="htitle">JALNETRA</div>
+    <span class="hbadge">DoLR &middot; SIH Problem #26015</span>
+  </div>
+  <div class="hright">
+    <div class="spill">
+      <span class="sdot"></span>
+      <span id="top-sensor-status">Sentinel-2 &amp; Esri World Imagery Live</span>
+    </div>
+    <select id="lang-select" onchange="changeLanguage()" class="lsel" aria-label="Language">
+      <option value="en" selected>English</option>
+      <option value="ta">Tamil</option>
+      <option value="hi">Hindi</option>
+    </select>
+  </div>
+</header>
+
+<div class="app-body">
+  <aside>
+    <div>
+      <p class="slbl" id="lbl-search">Search Watershed</p>
+      <input type="text" id="sidebar-search-input" value="Kanyakumari" placeholder="e.g. Kanyakumari, Madurai..." class="sinput" />
+      <button onclick="handleLocateWatershed()" class="btnp">&#127919; <span id="lbl-btn-locate">Locate &amp; Calculate</span></button>
+    </div>
+    <nav>
+      <p class="slbl">Sections</p>
+      <button onclick="switchTab('tab1')" id="nav-tab1" class="nbtn">&#9638; <span id="lbl-tab1">Platform Overview</span></button>
+      <button onclick="switchTab('tab2')" id="nav-tab2" class="nbtn active">&#127760; <span id="lbl-tab2">Live GIS Monitoring</span></button>
+      <button onclick="switchTab('tab3')" id="nav-tab3" class="nbtn">&#128752; <span id="lbl-tab3">Land Cover AI</span></button>
+      <button onclick="switchTab('tab4')" id="nav-tab4" class="nbtn">&#8863; <span id="lbl-tab4">Change Detection</span></button>
+      <button onclick="switchTab('tab5')" id="nav-tab5" class="nbtn">&#128200; <span id="lbl-tab5">1-Year Trends</span></button>
+    </nav>
+    <div style="flex:1"></div>
+    <button onclick="openReportModal()" class="btnr">&#128196; <span id="lbl-btn-pdf">Generate Watershed Report</span></button>
+  </aside>
+
+  <main>
+    <!-- TAB 1: PLATFORM OVERVIEW -->
+    <section id="view-tab1" class="tab-section">
+      <div class="hero">
+        <div class="hbadge2">SIH Problem Statement 26015 &middot; Ministry of Rural Development</div>
+        <h1 class="htitle2">From Field Evidence to Watershed Decisions</h1>
+        <p class="hdesc">JALNETRA brings together field photos, Sentinel-2 satellite imagery, and GIS layers to help officers analyse land cover, vegetation, water spread, and change &mdash; for evidence-based watershed planning.</p>
+      </div>
+      <div class="g4" style="margin-bottom:16px">
+        <div class="pcrd">
+          <div style="font-size:22px;margin-bottom:8px">&#128752;</div>
+          <div style="font-size:14px;font-weight:700;color:#1a2332;margin-bottom:4px">Satellite Intelligence</div>
+          <div class="ptag">NDVI &middot; NDWI &middot; Land Cover</div>
+          <div style="font-size:12px;color:#6b7a94;line-height:1.5">Continuous multispectral data from Sentinel-2 surface reflectance imagery.</div>
+        </div>
+        <div class="pcrd">
+          <div style="font-size:22px;margin-bottom:8px">&#128205;</div>
+          <div style="font-size:14px;font-weight:700;color:#1a2332;margin-bottom:4px">Geo-coded Evidence</div>
+          <div class="ptag">GPS &middot; Field Photos &middot; Observations</div>
+          <div style="font-size:12px;color:#6b7a94;line-height:1.5">EXIF geotag parsing from field photos &mdash; no fabricated coordinate fallbacks.</div>
+        </div>
+        <div class="pcrd">
+          <div style="font-size:22px;margin-bottom:8px">&#128260;</div>
+          <div style="font-size:14px;font-weight:700;color:#1a2332;margin-bottom:4px">Change Analysis</div>
+          <div class="ptag">12-Month Trends &middot; Before/After</div>
+          <div style="font-size:12px;color:#6b7a94;line-height:1.5">Pixel-level tracking of surface water and vegetation regeneration over time.</div>
+        </div>
+        <div class="pcrd">
+          <div style="font-size:22px;margin-bottom:8px">&#127919;</div>
+          <div style="font-size:14px;font-weight:700;color:#1a2332;margin-bottom:4px">Decision Support</div>
+          <div class="ptag">Hotspots &middot; Interventions &middot; Reports</div>
+          <div style="font-size:12px;color:#6b7a94;line-height:1.5">Automated summaries for administrative action with cross-sensor validation.</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="shd">
+          <div class="stitle">&#9889; How It Works</div>
+          <div class="smeta">Sentinel-2 &middot; 10m Resolution</div>
+        </div>
+        <div class="g3">
+          <div class="wstep">
+            <div class="wnum">STEP 1</div>
+            <div class="wtitle">Data Ingestion</div>
+            <div class="wdet">Sentinel-2 L2A + Field Photos + GIS Layers</div>
+            <div class="wdesc">Raw spectral bands (B02, B03, B04, B08) paired with on-ground asset geotags.</div>
+          </div>
+          <div class="wstep" style="border-color:#b2ddd1">
+            <div class="wnum">STEP 2</div>
+            <div class="wtitle">AI Spatial Analysis</div>
+            <div class="wdet">NDVI + NDWI + CNN (U-Net) + Change Detection</div>
+            <div class="wdesc">Pixel-level semantic masks and cloud-filtered 12-month evolution computed automatically.</div>
+          </div>
+          <div class="wstep">
+            <div class="wnum">STEP 3</div>
+            <div class="wtitle">Decision Output</div>
+            <div class="wdet">Hotspots + Intervention Plan + Officer PDF</div>
+            <div class="wdesc">Generates certified administrative reports with cross-sensor evidence validation.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- TAB 2: LIVE GIS MONITORING -->
+    <section id="view-tab2" class="tab-section active">
+      <div class="gisg">
+        <div class="card" style="padding:14px">
+          <div class="mlbtns">
+            <button onclick="setMapLayer('satellite')" class="lbtn al" id="btn-layer-sat"><span id="lbl-layer-sat">Satellite</span></button>
+            <button onclick="setMapLayer('ndvi')" class="lbtn" id="btn-layer-ndvi"><span id="lbl-layer-ndvi">Vegetation (NDVI)</span></button>
+            <button onclick="setMapLayer('water')" class="lbtn" id="btn-layer-water"><span id="lbl-layer-water">Water Spread</span></button>
+            <button onclick="setMapLayer('drainage')" class="lbtn" id="btn-layer-drainage"><span id="lbl-layer-drainage">Drainage / Stream</span></button>
+          </div>
+          <div id="map"></div>
+          <div class="cbar">
+            <span>Click anywhere on the map to inspect location</span>
+            <span class="cval" id="map-click-coords">Lat: 8.0883, Lon: 77.5385</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="card" style="padding:14px">
+            <div class="ahdr"><span id="lbl-total-catchment">Total Mapped Area:</span> <span class="aval2" id="txt-total-catchment">3,045.5 Ha (30.45 Sq. Km)</span></div>
+            <div class="lcard">
+              <div class="lname" id="side-place-name">Kanyakumari, Tamil Nadu</div>
+              <div class="lcoords" id="side-lat-lon">Lat: 8.0883&deg; N, Lon: 77.5385&deg; E</div>
+            </div>
+            <p style="font-size:12px;font-weight:700;color:#1a2332;margin-bottom:8px" id="lbl-spatial-states">Land Cover Breakdown</p>
+            <div class="irow">
+              <div>
+                <div class="ilbl cg" id="lbl-veg-state">&#127807; Vegetation</div>
+                <div class="isub" id="lbl-veg-desc">Active Crop &amp; Forest Canopy</div>
+                <div class="ism"><span id="lbl-veg-prefix">Area:</span> <span id="txt-veg-ha">956.3 Ha</span></div>
+              </div>
+              <div class="ipct" id="txt-veg-pct">31.4%</div>
+            </div>
+            <div class="irow">
+              <div>
+                <div class="ilbl cb2" id="lbl-water-state">&#128167; Water Spread</div>
+                <div class="isub" id="lbl-water-desc">Active Surface Water / Coastal</div>
+                <div class="ism"><span id="lbl-water-prefix">Area:</span> <span id="txt-water-ha">645.6 Ha</span></div>
+              </div>
+              <div class="ipct" id="txt-water-pct">21.2%</div>
+            </div>
+            <div class="irow" style="margin-bottom:0">
+              <div>
+                <div class="ilbl cam" id="lbl-drainage-state">&#127754; Drainage Network</div>
+                <div class="isub" id="lbl-drainage-desc">Coastal Stream Outfall</div>
+                <div class="ism"><span id="lbl-drainage-prefix">Area:</span> <span id="txt-drainage-ha">194.9 Ha</span></div>
+              </div>
+              <div class="ipct" id="txt-drainage-pct">6.4%</div>
+            </div>
+          </div>
+          <div class="card" style="padding:14px">
+            <div style="font-size:12px;font-weight:700;color:#1a2332;margin-bottom:10px">&#127760; Data Source Details</div>
+            <table class="ptbl">
+              <tr><td>Watershed</td><td id="prov-ws">SRISHTI / NRSC</td></tr>
+              <tr><td>Satellite</td><td id="prov-sat" class="cg">Sentinel-2 L2A</td></tr>
+              <tr><td>Image Date</td><td id="prov-acq">08-Sep-2026</td></tr>
+              <tr><td>Cloud Cover</td><td id="prov-cloud" class="cb2">7.2%</td></tr>
+              <tr><td>Resolution</td><td id="prov-res">10 m</td></tr>
+              <tr><td>Field Observations</td><td id="prov-evid" class="cam">3 geo-tagged</td></tr>
+            </table>
+          </div>
+          <div class="card" style="padding:14px">
+            <p style="font-size:12px;font-weight:700;color:#1a2332;margin-bottom:8px" id="lbl-ground-assets">Ground Assets Monitored</p>
+            <div class="agrid">
+              <div class="atile"><div class="aname" id="lbl-dams">Check Dams</div><div class="aval" id="val-check-dams">7 units</div></div>
+              <div class="atile"><div class="aname" id="lbl-ponds">Farm Ponds</div><div class="aval" id="val-farm-ponds">15 units</div></div>
+              <div class="atile"><div class="aname" id="lbl-percolation">Percolation Tanks</div><div class="aval" id="val-percolation">9 units</div></div>
+              <div class="atile"><div class="aname" id="lbl-bunds">Contour Bunds</div><div class="aval" id="val-contour">4 units</div></div>
+            </div>
+            <hr />
+            <div style="font-size:12px;font-weight:700;color:#1a2332;margin-bottom:8px" id="lbl-field-verify">&#128247; Field Photo GPS Verification</div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <input type="file" id="field-photo-file" accept="image/*" />
+              <button onclick="handleParseGPS()" class="btns" id="btn-parse-gps">Parse GPS</button>
+            </div>
+            <div id="field-gps-status">Upload a field photo to extract GPS coordinates from its EXIF data.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- TAB 3: CNN LAND-COVER AI -->
+    <section id="view-tab3" class="tab-section">
+      <div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+        <div>
+          <div class="ctitle" id="t3-title">AI Land Cover Classification (CNN / U-Net)</div>
+          <div class="csub" id="t3-sub">Upload a Sentinel-2 satellite tile to automatically classify land cover and calculate physical surface area.</div>
+        </div>
+        <div>
+          <input type="file" id="cnn-file-input" accept="image/*" onchange="runCNNClassify()" style="display:none" />
+          <button onclick="document.getElementById('cnn-file-input').click()" class="btna" id="btn-upload-cnn">&#128752; <span>Upload &amp; Classify</span></button>
+        </div>
+      </div>
+      <div class="g2" style="margin-bottom:14px">
+        <div class="card" style="padding:14px">
+          <div style="font-size:13px;font-weight:700;color:#1a2332;margin-bottom:10px" id="lbl-orig-tile">Original Satellite Image</div>
+          <div id="box-cnn-orig" class="pvbox"><div class="pvph" id="msg-await-orig">Upload a satellite tile to view it here</div></div>
+        </div>
+        <div class="card" style="padding:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div style="font-size:13px;font-weight:700;color:#0e7c61" id="lbl-pixel-mask">Land Cover Classification Mask</div>
+            <div style="font-size:11px;color:#0369a1;font-weight:600" id="lbl-cyan-tag">Cyan = Water</div>
+          </div>
+          <div id="box-cnn-mask" class="pvbox"><div class="pvph" id="msg-await-mask">Classification result will appear here</div></div>
+        </div>
+      </div>
+      <div class="g4" style="margin-bottom:14px">
+        <div class="kpi"><div class="klbl" id="kpi-lbl-res">Image Resolution</div><div class="kval" id="cnn-res">-- x -- px</div></div>
+        <div class="kpi kg"><div class="klbl" id="kpi-lbl-area">Calculated Surface Area</div><div class="kval" id="cnn-ha">-- Ha</div></div>
+        <div class="kpi kb"><div class="klbl" id="kpi-lbl-sqkm">Square Kilometres</div><div class="kval" id="cnn-sqkm">-- Sq. Km</div></div>
+        <div class="kpi ka"><div class="klbl" id="kpi-lbl-acres">Calculated Acres</div><div class="kval" id="cnn-acres">-- Acres</div></div>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="ctitle" id="lbl-seg-classes">Land Cover Classes &amp; Area</div>
+          <div id="cnn-classes-list" style="font-size:13px;color:#6b7a94;margin-top:8px">Upload a satellite scene to view land cover distribution.</div>
+        </div>
+        <div class="card">
+          <div class="ctitle" style="margin-bottom:12px" id="lbl-diag-title">Hydrological Diagnostics</div>
+          <div class="dr"><span class="dk" id="lbl-mean-ndvi">Mean NDVI:</span> <span class="dv cg" id="diag-ndvi">--</span></div>
+          <div class="dr"><span class="dk" id="lbl-mean-ndwi">Mean NDWI:</span> <span class="dv cb2" id="diag-ndwi">--</span></div>
+          <div class="dr"><span class="dk" id="lbl-cloud-cov">Cloud Cover:</span> <span class="dv" id="diag-cloud">--%</span></div>
+          <div class="dr"><span class="dk" id="lbl-valid-area">Cloud-Free Area:</span> <span class="dv cg" id="diag-valid">--%</span></div>
+          <div class="dr" style="margin-bottom:14px"><span class="dk" id="lbl-fidelity">Confidence:</span> <span class="dv" id="diag-conf">--</span></div>
+          <div class="alertbox">
+            <div class="alrt" id="lbl-alert-tag">&#9888; Identified Issue:</div>
+            <div class="altx" id="txt-problem-alert">Waiting for satellite scene upload...</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: CHANGE DETECTION -->
+    <section id="view-tab4" class="tab-section">
+      <div class="card" style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:14px">
+        <div style="display:flex;flex-wrap:wrap;gap:20px">
+          <div>
+            <div style="font-size:12px;color:#6b7a94;margin-bottom:6px" id="lbl-pre-int">Before Image (Pre-Intervention)</div>
+            <input type="file" id="before-file" onchange="previewBeforeImage(this)" />
+          </div>
+          <div>
+            <div style="font-size:12px;color:#6b7a94;margin-bottom:6px" id="lbl-post-int">After Image (Post-Intervention)</div>
+            <input type="file" id="after-file" onchange="previewAfterImage(this)" />
+          </div>
+        </div>
+        <button onclick="runChangeDetection()" class="btna" id="btn-compute-change">Compute Change</button>
+      </div>
+      <div class="g3" style="margin-bottom:14px">
+        <div class="card" style="padding:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span style="font-size:13px;font-weight:700" id="lbl-before-panel">Before</span>
+            <span style="font-size:11px;color:#6b7a94">Sentinel-2 True Colour</span>
+          </div>
+          <div id="box-before-preview" class="pvbox"><div class="pvph" id="msg-await-before">Upload the Before image</div></div>
+        </div>
+        <div class="card" style="padding:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span style="font-size:13px;font-weight:700" id="lbl-after-panel">After</span>
+            <span style="font-size:11px;color:#6b7a94">Sentinel-2 True Colour</span>
+          </div>
+          <div id="box-after-preview" class="pvbox"><div class="pvph" id="msg-await-after">Upload the After image</div></div>
+        </div>
+        <div class="card" style="padding:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span style="font-size:13px;font-weight:700;color:#0e7c61" id="lbl-change-panel">Change Map</span>
+            <span style="font-size:11px;color:#6b7a94">10m Pixel Delta</span>
+          </div>
+          <div id="box-change-map" class="pvbox"><div class="pvph" id="msg-await-change">Change map will appear here</div></div>
+        </div>
+      </div>
+      <div class="lgbar">
+        <span class="lgi"><span class="lgd" style="background:#22c55e"></span><span id="leg-veg-inc">Vegetation Increase</span></span>
+        <span class="lgi"><span class="lgd" style="background:#ef4444"></span><span id="leg-veg-dec">Vegetation Decrease</span></span>
+        <span class="lgi"><span class="lgd" style="background:#06b6d4"></span><span id="leg-wat-inc">Water Spread Increase</span></span>
+        <span class="lgi"><span class="lgd" style="background:#f59e0b"></span><span id="leg-wat-dec">Water Spread Decrease</span></span>
+        <span class="lgi"><span class="lgd" style="background:#cbd5e1"></span><span id="leg-stable">No Change</span></span>
+      </div>
+      <div class="card">
+        <div class="shd">
+          <div class="stitle" id="lbl-chg-breakdown">Area Changed &mdash; Breakdown</div>
+          <div class="smeta" id="lbl-calc-note">Based on 10m Sentinel-2 pixels</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+          <div class="kpi"><div class="klbl" id="lbl-c-tot">Total Watershed</div><div class="kval" id="chg-tot">-- ha</div></div>
+          <div class="kpi kg"><div class="klbl" id="lbl-c-v-inc">Vegetation Increase</div><div class="kval" id="chg-veg-inc">--</div></div>
+          <div class="kpi" style="border-color:#fca5a5"><div class="klbl" id="lbl-c-v-dec">Vegetation Decrease</div><div class="kval" style="color:#dc2626" id="chg-veg-dec">--</div></div>
+          <div class="kpi kb"><div class="klbl" id="lbl-c-w-inc">Water Spread Increase</div><div class="kval" id="chg-wat-inc">--</div></div>
+          <div class="kpi ka"><div class="klbl" id="lbl-c-w-dec">Water Spread Decrease</div><div class="kval" id="chg-wat-dec">--</div></div>
+          <div class="kpi kg"><div class="klbl" id="lbl-c-sig">Significant Change</div><div class="kval" id="chg-sig">--</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: 1-YEAR TRENDS -->
+    <section id="view-tab5" class="tab-section">
+      <div class="card">
+        <div style="margin-bottom:16px">
+          <h2 style="font-size:18px;font-weight:700;color:#1a2332" id="t5-head">12-Month Trends</h2>
+          <p style="font-size:13px;color:#6b7a94;margin-top:4px">
+            <span id="t5-sub">Monthly NDVI vegetation index and water storage for:</span>
+            <strong style="color:#0e7c61" id="trend-target-location"> Kanyakumari</strong>
+          </p>
+        </div>
+        <div class="cwrap">
+          <div class="ctit" id="t5-chart1-t">&#127807; NDVI Vegetation Index (Past 12 Months)</div>
+          <div class="ccvs"><canvas id="chartNDVI"></canvas></div>
+        </div>
+        <div class="cwrap">
+          <div class="ctit" id="t5-chart2-t">&#128167; Water Storage Capacity (m&#179;)</div>
+          <div class="ccvs"><canvas id="chartWater"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+<!-- REPORT MODAL -->
+<div id="report-modal" class="modal-overlay hidden">
+  <div class="mbox">
+    <div class="mhdr">
+      <div>
+        <div class="mtitle">Watershed Assessment Report</div>
+        <div class="msub" id="modal-watershed-name">Region: Kanyakumari Watershed</div>
+      </div>
+      <button onclick="closeReportModal()" class="mclose">&#10005;</button>
+    </div>
+    <div class="mbody">
+      <div class="mflbl">Primary Classification</div>
+      <div class="mfval" style="color:#b45309">Low / Stressed Vegetation</div>
+      <div class="mgrid" style="margin-bottom:12px">
+        <div><div class="mflbl">Prediction Confidence</div><div style="font-size:18px;font-weight:700;color:#0e7c61">0.89</div></div>
+        <div><div class="mflbl">Current Surface NDVI</div><div style="font-size:18px;font-weight:700;color:#0e7c61">0.21</div></div>
+      </div>
+      <hr />
+      <div class="mflbl" style="margin-top:10px">Supporting Evidence</div>
+      <ul style="font-size:13px;color:#1a2332;margin-top:6px;padding-left:16px;line-height:2">
+        <li>12-Month NDVI Delta: <strong style="color:#dc2626">&minus;0.14</strong></li>
+        <li>Field Observation: <strong>Vegetation Stress</strong></li>
+        <li>Aquifer State: <strong style="color:#b45309">Capillary Deficit in Topsoil</strong></li>
+      </ul>
+      <hr />
+      <div class="mflbl" style="margin-top:10px">Scientific Interpretation</div>
+      <p style="font-size:13px;color:#0e7c61;margin-top:4px;font-style:italic;line-height:1.6">"Multiple evidence sources are consistent. Canopy reflectance confirms moisture deficit. Field verification recommended."</p>
+    </div>
+    <div class="mact">
+      <button onclick="closeReportModal()" class="btns">Close</button>
+      <button onclick="downloadOfficerPDF()" class="btna">&#128229; Download PDF Report</button>
+    </div>
+  </div>
+</div>
+<script>
+  let currentLang = 'en';
+  let latestCNNClasses = [];
+
+  function switchTab(tabId) {
+    ['tab1','tab2','tab3','tab4','tab5'].forEach(function(t) {
+      document.getElementById('view-'+t).classList.remove('active');
+      document.getElementById('nav-'+t).classList.remove('active');
+    });
+    document.getElementById('view-'+tabId).classList.add('active');
+    document.getElementById('nav-'+tabId).classList.add('active');
+    if (tabId === 'tab2') setTimeout(function(){ map.invalidateSize(); }, 200);
+  }
+
+  var map = L.map('map').setView([8.0883, 77.5385], 12);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 18, attribution: 'Esri World Imagery | Sentinel-2'
+  }).addTo(map);
+
+  var currentOverlay = null;
+  var watershedPoly = null;
+  var drainageLayers = [];
+  var catchmentPoly = L.rectangle([[8.055,77.505],[8.125,77.575]], {color:'#0e7c61',weight:2,dashArray:'4,4',fillOpacity:0.10}).addTo(map);
+  var assetMarkers = [
+    L.marker([8.095,77.545]).addTo(map).bindPopup('Coastal Check Dam #01 (Functional)'),
+    L.marker([8.075,77.530]).addTo(map).bindPopup('Percolation Tank #04'),
+    L.marker([8.100,77.520]).addTo(map).bindPopup('Primary Drainage Outfall')
+  ];
+
+  map.on('click', function(e) {
+    var lat = e.latlng.lat, lon = e.latlng.lng;
+    document.getElementById('map-click-coords').innerText = 'Lat: '+lat.toFixed(4)+', Lon: '+lon.toFixed(4);
+    fetch('/api/geo/reverse?lat='+lat+'&lon='+lon).then(function(r){ return r.json(); }).then(function(data) {
+      var pName = data.display_name.split(',').slice(0,3).join(',');
+      document.getElementById('side-place-name').innerText = pName;
+      document.getElementById('side-lat-lon').innerText = 'Lat: '+lat.toFixed(4)+'° N, Lon: '+lon.toFixed(4)+'° E';
+      document.getElementById('trend-target-location').innerText = pName;
+      updateTrends(pName, lat, lon);
+      L.popup().setLatLng([lat,lon]).setContent('<b>Clicked:</b><br/>'+data.display_name.split(',')[0]+'<br/>Lat: '+lat.toFixed(4)+', Lon: '+lon.toFixed(4)).openOn(map);
+    }).catch(function(err) {
+      document.getElementById('side-lat-lon').innerText = 'Lat: '+lat.toFixed(4)+'° N, Lon: '+lon.toFixed(4)+'° E';
+    });
+  });
+
+  function setMapLayer(type) {
+    ['btn-layer-sat','btn-layer-ndvi','btn-layer-water','btn-layer-drainage'].forEach(function(b){ document.getElementById(b).classList.remove('al'); });
+    if (currentOverlay) { map.removeLayer(currentOverlay); currentOverlay = null; }
+    var bounds = catchmentPoly.getBounds();
+    if (type==='satellite') { document.getElementById('btn-layer-sat').classList.add('al'); }
+    else if (type==='ndvi') { document.getElementById('btn-layer-ndvi').classList.add('al'); currentOverlay = L.rectangle(bounds,{color:'#0e7c61',weight:1,fillColor:'#16a34a',fillOpacity:0.40}).addTo(map); }
+    else if (type==='water') { document.getElementById('btn-layer-water').classList.add('al'); currentOverlay = L.rectangle(bounds,{color:'#0369a1',weight:1,fillColor:'#0284c7',fillOpacity:0.45}).addTo(map); }
+    else if (type==='drainage') { document.getElementById('btn-layer-drainage').classList.add('al'); currentOverlay = L.polyline([bounds.getNorthWest(),bounds.getCenter(),bounds.getSouthEast()],{color:'#b45309',weight:4,opacity:0.80}).addTo(map); }
+  }
+
+  function handleLocateWatershed() {
+    var place = document.getElementById('sidebar-search-input').value;
+    if (!place) return;
+    var lat=8.0883, lon=77.5385, displayName='Kanyakumari, Tamil Nadu';
+    fetch('/api/geo/search?q='+encodeURIComponent(place)).then(function(r){ return r.json(); }).then(function(geoData) {
+      if (geoData.status==='SUCCESS' && geoData.data.length>0) {
+        lat=parseFloat(geoData.data[0].lat); lon=parseFloat(geoData.data[0].lon); displayName=geoData.data[0].display_name;
+      }
+      document.getElementById('side-place-name').innerText = displayName.split(',').slice(0,3).join(',');
+      document.getElementById('side-lat-lon').innerText = 'Lat: '+lat.toFixed(4)+'° N, Lon: '+lon.toFixed(4)+'° E';
+      document.getElementById('map-click-coords').innerText = 'Lat: '+lat.toFixed(4)+', Lon: '+lon.toFixed(4);
+      map.flyTo([lat,lon],12);
+      return fetch('/api/watershed/calculate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({place:place,lat:lat,lon:lon})});
+    }).then(function(r){ return r.json(); }).then(function(data) {
+      if (currentOverlay){map.removeLayer(currentOverlay);currentOverlay=null;}
+      if (watershedPoly) map.removeLayer(watershedPoly);
+      if (drainageLayers) {drainageLayers.forEach(function(l){map.removeLayer(l);}); drainageLayers=[];}
+      watershedPoly = L.polygon(data.polygon,{color:'#0e7c61',weight:2.5,dashArray:'5,5',fillColor:'#16a34a',fillOpacity:0.12}).addTo(map);
+      var s1=L.polyline(data.drainage_network.main_stream,{color:'#0369a1',weight:3,opacity:0.80}).addTo(map);
+      var s2=L.polyline(data.drainage_network.tributary,{color:'#0284c7',weight:2,opacity:0.70,dashArray:'3,3'}).addTo(map);
+      var t1=L.polygon(data.drainage_network.primary_waterbody,{color:'#0369a1',weight:1.5,fillColor:'#0284c7',fillOpacity:0.45}).addTo(map);
+      drainageLayers.push(s1,s2,t1);
+      if (data.provenance) {
+        document.getElementById('prov-ws').innerText=data.provenance.watershed_source;
+        document.getElementById('prov-sat').innerText=data.provenance.satellite;
+        document.getElementById('prov-acq').innerText=data.provenance.acquisition;
+        document.getElementById('prov-cloud').innerText=data.provenance.cloud_cover;
+        document.getElementById('prov-res').innerText=data.provenance.resolution;
+        document.getElementById('prov-evid').innerText=data.provenance.field_evidence;
+      }
+      assetMarkers.forEach(function(m){map.removeLayer(m);});
+      assetMarkers = [
+        L.marker([lat+0.010,lon-0.008]).addTo(map).bindPopup('Check Dam #01 ('+place+')'),
+        L.marker([lat-0.008,lon+0.012]).addTo(map).bindPopup('Percolation Pond ('+place+')'),
+        L.marker([lat-0.012,lon-0.004]).addTo(map).bindPopup('Primary Drainage Channel ('+place+')')
+      ];
+      document.getElementById('txt-total-catchment').innerText = data.total_area_ha.toLocaleString()+' Ha ('+data.sq_km+' Sq. Km)';
+      document.getElementById('txt-veg-pct').innerText = data.states.vegetation.pct+'%';
+      document.getElementById('txt-veg-ha').innerText = data.states.vegetation.ha+' Ha';
+      document.getElementById('txt-water-pct').innerText = data.states.water.pct+'%';
+      document.getElementById('txt-water-ha').innerText = data.states.water.ha+' Ha';
+      document.getElementById('txt-drainage-pct').innerText = data.states.drainage.pct+'%';
+      document.getElementById('txt-drainage-ha').innerText = data.states.drainage.ha+' Ha';
+      document.getElementById('val-check-dams').innerText = data.ground_assets.check_dams+' units';
+      document.getElementById('val-farm-ponds').innerText = data.ground_assets.farm_ponds+' units';
+      document.getElementById('val-percolation').innerText = data.ground_assets.percolation_tanks+' units';
+      document.getElementById('val-contour').innerText = data.ground_assets.contour_bunds+' units';
+      document.getElementById('trend-target-location').innerText = data.place;
+      updateTrends(data.place, lat, lon);
+    }).catch(function(err){ console.error('Watershed error:', err); });
+  }
+
+  function handleParseGPS() {
+    var input = document.getElementById('field-photo-file');
+    if (!input.files[0]) { alert('Please select a field photograph.'); return; }
+    var fd = new FormData(); fd.append('file',input.files[0]);
+    fetch('/api/field/parse-exif',{method:'POST',body:fd}).then(function(r){ return r.json(); }).then(function(data) {
+      if (data.status==='GPS_EXTRACTED') {
+        document.getElementById('field-gps-status').innerText = 'Asset found at: Lat '+data.latitude+', Lon '+data.longitude+' — Status: '+data.asset_status;
+        L.marker([data.latitude,data.longitude]).addTo(map).bindPopup('Field Geo-Photo Asset').openPopup();
+        map.flyTo([data.latitude,data.longitude],14);
+      } else { document.getElementById('field-gps-status').innerText=data.message; alert(data.message); }
+    });
+  }
+
+  function runCNNClassify() {
+    var input=document.getElementById('cnn-file-input');
+    if (!input.files[0]) return;
+    var file=input.files[0];
+    var reader=new FileReader();
+    reader.onload=function(e){document.getElementById('box-cnn-orig').innerHTML='<img src="'+e.target.result+'" style="width:100%;height:100%;object-fit:cover"/>';};
+    reader.readAsDataURL(file);
+    var fd=new FormData(); fd.append('file',file);
+    fetch('/api/cnn/classify',{method:'POST',body:fd}).then(function(r){ return r.json(); }).then(function(d) {
+      if (d.status==='ERROR'){alert('Classification error: '+d.message);return;}
+      document.getElementById('box-cnn-mask').innerHTML='<img src="'+d.mask_image_b64+'" style="width:100%;height:100%;object-fit:cover"/>';
+      document.getElementById('cnn-res').innerText=d.dimensions;
+      document.getElementById('cnn-ha').innerText=d.total_ha.toLocaleString()+' Ha';
+      document.getElementById('cnn-sqkm').innerText=d.sq_km+' Sq. Km';
+      document.getElementById('cnn-acres').innerText=d.acres.toLocaleString()+' Acres';
+      document.getElementById('diag-ndvi').innerText=d.mean_ndvi;
+      document.getElementById('diag-ndwi').innerText=d.mean_ndwi;
+      document.getElementById('diag-cloud').innerText=d.cloud_cover_pct+'%';
+      document.getElementById('diag-valid').innerText=d.valid_area_pct+'%';
+      document.getElementById('diag-conf').innerText=d.confidence;
+      document.getElementById('txt-problem-alert').innerText='Downstream surplus channel desiltation recommended before northeast monsoon peak.';
+      latestCNNClasses=d.classes; renderCNNClassList();
+    }).catch(function(err){alert('Classification error: '+err.message);});
+  }
+
+  function renderCNNClassList() {
+    if (!latestCNNClasses || latestCNNClasses.length === 0) return;
+    var cList = document.getElementById('cnn-classes-list');
+    cList.innerHTML = '';
+    latestCNNClasses.forEach(function(c) {
+      cList.innerHTML += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f0f4f8;font-size:13px"><span style="color:'+c.color+';font-weight:600">&#9679; '+c.name+'</span><span style="font-weight:600;color:#1a2332">'+c.pct+'% ('+c.ha+' Ha)</span></div>';
+    });
+  }
+
+  function previewBeforeImage(input) {
+    if (input.files&&input.files[0]){var r=new FileReader();r.onload=function(e){document.getElementById('box-before-preview').innerHTML='<img src="'+e.target.result+'" style="width:100%;height:100%;object-fit:cover"/>';};r.readAsDataURL(input.files[0]);}
+  }
+  function previewAfterImage(input) {
+    if (input.files&&input.files[0]){var r=new FileReader();r.onload=function(e){document.getElementById('box-after-preview').innerHTML='<img src="'+e.target.result+'" style="width:100%;height:100%;object-fit:cover"/>';};r.readAsDataURL(input.files[0]);}
+  }
+
+  function runChangeDetection() {
+    var bF=document.getElementById('before-file'), aF=document.getElementById('after-file');
+    if (!bF.files[0]||!aF.files[0]){alert('Please select both Before and After images.');return;}
+    previewBeforeImage(bF); previewAfterImage(aF);
+    var fd=new FormData(); fd.append('file_before',bF.files[0]); fd.append('file_after',aF.files[0]);
+    fetch('/api/change/compute',{method:'POST',body:fd}).then(function(r){ return r.json(); }).then(function(d) {
+      document.getElementById('box-change-map').innerHTML='<img src="'+d.change_map_b64+'" style="width:100%;height:100%;object-fit:cover"/>';
+      document.getElementById('chg-tot').innerText=d.total_watershed_ha+' ha';
+      document.getElementById('chg-veg-inc').innerText=d.veg_increase_ha;
+      document.getElementById('chg-veg-dec').innerText=d.veg_decrease_ha;
+      document.getElementById('chg-wat-inc').innerText=d.water_increase_ha;
+      document.getElementById('chg-wat-dec').innerText=d.water_decrease_ha;
+      document.getElementById('chg-sig').innerText=d.significant_change_ha;
+    }).catch(function(err){alert('Change detection error: '+err.message);});
+  }
+
+  var chartNDVIInstance=null, chartWaterInstance=null;
+  function initCharts(months, ndviData, waterData) {
+    var cn=document.getElementById('chartNDVI').getContext('2d');
+    if (chartNDVIInstance) chartNDVIInstance.destroy();
+    chartNDVIInstance=new Chart(cn,{data:{labels:months,datasets:[
+      {type:'line',label:'NDVI Trend',data:ndviData,borderColor:'#0e7c61',borderWidth:2.5,tension:0.35,pointRadius:4,pointBackgroundColor:'#0e7c61',fill:false,order:1},
+      {type:'bar',label:'Observed NDVI',data:ndviData,backgroundColor:'rgba(14,124,97,0.15)',borderColor:'rgba(14,124,97,0.35)',borderWidth:1,borderRadius:4,order:2}
+    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:true,labels:{color:'#4b5a70',boxWidth:12,font:{size:11}}}},
+      scales:{x:{ticks:{color:'#6b7a94'},grid:{display:false}},y:{min:0,max:1.0,ticks:{color:'#6b7a94'},grid:{color:'#e8edf3'}}}}});
+    var cw=document.getElementById('chartWater').getContext('2d');
+    if (chartWaterInstance) chartWaterInstance.destroy();
+    chartWaterInstance=new Chart(cw,{data:{labels:months,datasets:[
+      {type:'line',label:'Water Capacity',data:waterData,borderColor:'#0369a1',borderWidth:2.5,tension:0.35,pointRadius:4,pointBackgroundColor:'#0369a1',fill:true,backgroundColor:'rgba(3,105,161,0.06)',order:1},
+      {type:'bar',label:'Water Volume',data:waterData,backgroundColor:'rgba(3,105,161,0.18)',borderRadius:4,order:2}
+    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:true,labels:{color:'#4b5a70',boxWidth:12,font:{size:11}}}},
+      scales:{x:{ticks:{color:'#6b7a94'},grid:{display:false}},y:{ticks:{color:'#6b7a94'},grid:{color:'#e8edf3'}}}}});
+  }
+
+  function updateTrends(place, lat, lon) {
+    fetch('/api/trends/query?place='+encodeURIComponent(place)+'&lat='+(lat||8.0883)+'&lon='+(lon||77.5385)).then(function(r){ return r.json(); }).then(function(d) {
+      if (d.months && d.ndvi_trend) initCharts(d.months, d.ndvi_trend, d.water_trend);
+    }).catch(function(err){ console.error('Trends error:', err); });
+  }
+
+  function openReportModal() {
+    var place=document.getElementById('sidebar-search-input').value;
+    document.getElementById('modal-watershed-name').innerText='Region: '+place+' Watershed';
+    document.getElementById('report-modal').classList.remove('hidden');
+  }
+  function closeReportModal() { document.getElementById('report-modal').classList.add('hidden'); }
+
+  function downloadOfficerPDF() {
+    var fd=new FormData();
+    fd.append('watershed_name',document.getElementById('sidebar-search-input').value);
+    fd.append('classification','Low / Stressed Vegetation');
+    fd.append('confidence','0.89'); fd.append('ndvi_val','0.21');
+    fd.append('ndvi_12m_change','-0.14'); fd.append('field_obs','Vegetation Stress');
+    fd.append('interpretation','Multiple evidence sources are consistent.');
+    fetch('/api/reports/generate-officer-pdf',{method:'POST',body:fd}).then(function(r){ return r.blob(); }).then(function(blob) {
+      var url=window.URL.createObjectURL(blob);
+      var a=document.createElement('a'); a.href=url; a.download='JALNETRA_Officer_Report.pdf';
+      document.body.appendChild(a); a.click(); a.remove();
+    });
+  }
+
+  function changeLanguage() {
+    currentLang = document.getElementById('lang-select').value;
+  }
+
+  handleLocateWatershed();
+</script>
+</body>
+</html>

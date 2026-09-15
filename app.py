@@ -1,5 +1,5 @@
 """
-JALNETRA: AI-Powered Geospatial Intelligence for Watershed Development
+JALNETRA: Geospatial Intelligence for Watershed Development
 Target: SIH26015 (Ministry of Rural Development)
 
 Real Data Architecture Backend Server:
@@ -41,11 +41,11 @@ from reportlab.lib import colors
 from services.watershed_service import resolve_location, fetch_real_watershed_polygon, compute_geodesic_polygon_area
 from services.water_resource_service import get_real_water_resources
 from services.copernicus_service import search_sentinel_scenes, get_12_month_temporal_telemetry
-from services.landcover_ai import classify_satellite_raster, array_to_base64_png
+from services.landcover_classifier import classify_satellite_raster, array_to_base64_png
 
 app = FastAPI(
     title="JALNETRA",
-    description="AI-Powered Geospatial Intelligence for Watershed Development (SIH26015)",
+    description="Geospatial Intelligence for Watershed Development (SIH26015)",
     version="10.5.0"
 )
 
@@ -338,7 +338,7 @@ def api_provenance(lat: float = Query(8.0883), lon: float = Query(77.5385)):
         "acquisition_date": latest_scene.get("acquisition_date", "12-Sep-2026"),
         "cloud_cover": latest_scene.get("cloud_cover", "7.2%"),
         "spatial_resolution": "10 m Ground Sample Distance",
-        "processing_method": "WGS-84 Geodesic Polygon Integration & PyTorch U-Net Tensor Inference",
+        "processing_method": "WGS-84 Geodesic Polygon Integration & Multispectral Classification",
         "field_observations_count": len(FIELD_OBSERVATIONS_REGISTRY)
     }
 
@@ -537,13 +537,13 @@ async def api_generate_pdf(
 
     t_style = ParagraphStyle('T', parent=styles['Heading1'], fontName='Helvetica-Bold', fontSize=16, textColor=colors.HexColor("#0f766e"), spaceAfter=4)
     elems.append(Paragraph("JALNETRA: Official Watershed Officer Report", t_style))
-    elems.append(Paragraph("<b>AI-Powered Geospatial Intelligence for Watershed Development (SIH26015)</b>", styles['Normal']))
+    elems.append(Paragraph("<b>Geospatial Intelligence for Watershed Development (SIH26015)</b>", styles['Normal']))
     elems.append(Paragraph(f"<b>Watershed Region:</b> {watershed_name} | <b>Date:</b> {datetime.utcnow().strftime('%d-%b-%Y')}", styles['Normal']))
     elems.append(Spacer(1, 14))
 
     data = [
         ["Evaluation Metric", "Observed Value", "Scientific Source / Protocol"],
-        ["Primary Land-Cover Status", classification, "PyTorch U-Net Multispectral Segmentation"],
+        ["Primary Land-Cover Status", classification, "Multispectral Raster Segmentation"],
         ["Softmax Confidence Level", confidence, "Pixel Probability Argmax Entropy"],
         ["Observed Mean NDVI", ndvi_val, "Copernicus Sentinel-2 Level-2A BOA Surface Reflectance"],
         ["12-Month NDVI Delta", ndvi_12m_change, "Multi-temporal Cloud-Filtered Sentinel Archive"],

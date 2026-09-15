@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>JALNETRA - Watershed Intelligence Platform | SIH 26015</title>
-  <meta name="description" content="JALNETRA: AI-powered geospatial platform for watershed monitoring." />
+  <meta name="description" content="JALNETRA: Geospatial platform for watershed monitoring." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -168,7 +168,7 @@
       <p class="slbl">Sections</p>
       <button onclick="switchTab('tab1')" id="nav-tab1" class="nbtn">&#9638; <span id="lbl-tab1">Platform Overview</span></button>
       <button onclick="switchTab('tab2')" id="nav-tab2" class="nbtn active">&#127760; <span id="lbl-tab2">Live GIS Monitoring</span></button>
-      <button onclick="switchTab('tab3')" id="nav-tab3" class="nbtn">&#128752; <span id="lbl-tab3">Land Cover AI</span></button>
+      <button onclick="switchTab('tab3')" id="nav-tab3" class="nbtn">&#128752; <span id="lbl-tab3">Land Cover Classification</span></button>
       <button onclick="switchTab('tab4')" id="nav-tab4" class="nbtn">&#8863; <span id="lbl-tab4">Change Detection</span></button>
       <button onclick="switchTab('tab5')" id="nav-tab5" class="nbtn">&#128200; <span id="lbl-tab5">1-Year Trends</span></button>
     </nav>
@@ -224,8 +224,8 @@
           </div>
           <div class="wstep" style="border-color:#b2ddd1">
             <div class="wnum">STEP 2</div>
-            <div class="wtitle">AI Spatial Analysis</div>
-            <div class="wdet">NDVI + NDWI + CNN (U-Net) + Change Detection</div>
+            <div class="wtitle">Spatial Analysis</div>
+            <div class="wdet">NDVI + NDWI + Land Cover + Change Detection</div>
             <div class="wdesc">Pixel-level semantic masks and cloud-filtered 12-month evolution computed automatically.</div>
           </div>
           <div class="wstep">
@@ -316,11 +316,11 @@
         </div>
       </div>
     </section>
-    <!-- TAB 3: CNN LAND-COVER AI -->
+    <!-- TAB 3: LAND-COVER CLASSIFICATION -->
     <section id="view-tab3" class="tab-section">
       <div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
         <div>
-          <div class="ctitle" id="t3-title">AI Land Cover Classification (CNN / U-Net)</div>
+          <div class="ctitle" id="t3-title">Land Cover Classification</div>
           <div class="csub" id="t3-sub">Upload a Sentinel-2 satellite tile to automatically classify land cover and calculate physical surface area.</div>
         </div>
         <div>

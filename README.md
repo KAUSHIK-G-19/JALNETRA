@@ -1,6 +1,6 @@
 # JALNETRA
 
-### AI-powered geospatial intelligence for watershed development
+### Geospatial intelligence for watershed development
 
 JALNETRA is a geospatial dashboard for turning satellite imagery, watershed geometry, field observations, and water-resource data into practical decision support. It combines a FastAPI service layer with a browser-based dashboard for monitoring watershed health and prioritizing interventions.
 
@@ -11,7 +11,7 @@ JALNETRA is a geospatial dashboard for turning satellite imagery, watershed geom
 - Maps nearby water resources such as check dams, farm ponds, percolation tanks, and contour bunds.
 - Queries Copernicus Sentinel-2 scene metadata and multi-month telemetry.
 - Calculates NDVI and NDWI indicators for vegetation and water monitoring.
-- Classifies raster imagery with a PyTorch U-Net land-cover model.
+- Classifies raster imagery by combining multispectral bands with land-cover rules.
 - Compares before-and-after imagery for vegetation and water change detection.
 - Captures EXIF-based field observations and supports intervention planning.
 - Generates an officer-ready watershed assessment PDF.
@@ -23,7 +23,7 @@ JALNETRA is a geospatial dashboard for turning satellite imagery, watershed geom
 | Interface | HTML, CSS, JavaScript, Leaflet, Chart.js |
 | API | Python, FastAPI, Uvicorn |
 | Geospatial data | Copernicus Data Space, Sentinel-2, OpenStreetMap services |
-| Machine learning | PyTorch U-Net segmentation |
+| Classification | Multispectral raster segmentation |
 | Raster and analysis | NumPy, Pillow |
 | Reporting | ReportLab |
 
@@ -86,7 +86,7 @@ Interactive API documentation is available at [http://127.0.0.1:8000/docs](http:
 .
 ├── app.py                         # FastAPI application and API routes
 ├── static/index.html              # Served dashboard interface
-├── services/                      # Geospatial, satellite, and ML services
+├── services/                      # Geospatial, satellite, and classification services
 ├── requirements.txt               # Python dependencies
 ├── .vscode/launch.json             # VS Code debug configuration
 └── .gitignore

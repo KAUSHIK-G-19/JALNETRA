@@ -1,80 +1,19 @@
 """
-JALNETRA: Deep Learning Land-Cover Segmentation Engine
+JALNETRA: Land-Cover Segmentation Engine
 Target: SIH26015 (Ministry of Rural Development)
 
-Runs true PyTorch U-Net tensor forward inference on real image rasters.
+Runs multispectral classification on real image rasters.
 Strict scientific integrity:
-- Model validation metrics are marked 'Not Available (Awaiting held-out test ground truth)'
-- Confidence is computed from Softmax entropy
+- Validation metrics require held-out ground truth.
+- Confidence is computed from spectral rule agreement.
 - Area calculation is only enabled for verified georeferenced rasters.
 """
 
 import io
-import os
 import base64
 import numpy as np
 from PIL import Image
 from typing import Dict, Any
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
-class DoubleConv(nn.Module):
-    def __init__(self, in_channels, out_channels):
-        super().__init__()
-        self.conv = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, 3, padding=1, bias=False),
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(out_channels, out_channels, 3, padding=1, bias=False),
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
-        )
-    def forward(self, x):
-        return self.conv(x)
-
-class UNetMultispectral(nn.Module):
-    def __init__(self, in_channels=4, num_classes=6):
-        super().__init__()
-        self.inc = DoubleConv(in_channels, 16)
-        self.down1 = nn.Sequential(nn.MaxPool2d(2), DoubleConv(16, 32))
-        self.down2 = nn.Sequential(nn.MaxPool2d(2), DoubleConv(32, 64))
-        self.up1 = nn.ConvTranspose2d(64, 32, 2, stride=2)
-        self.conv_up1 = DoubleConv(64, 32)
-        self.up2 = nn.ConvTranspose2d(32, 16, 2, stride=2)
-        self.conv_up2 = DoubleConv(32, 16)
-        self.outc = nn.Conv2d(16, num_classes, 1)
-
-    def forward(self, x):
-        x1 = self.inc(x)
-        x2 = self.down1(x1)
-        x3 = self.down2(x2)
-        x = self.up1(x3)
-        x = torch.cat([x, x2], dim=1)
-        x = self.conv_up1(x)
-        x = self.up2(x)
-        x = torch.cat([x, x1], dim=1)
-        x = self.conv_up2(x)
-        return self.outc(x)
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-unet_model = UNetMultispectral(in_channels=4, num_classes=6).to(device)
-
-CHECKPOINT_PATH = "models/unet_sentinel2_weights.pth"
-MODEL_VALIDATED = os.path.exists(CHECKPOINT_PATH)
-if MODEL_VALIDATED:
-    try:
-        unet_model.load_state_dict(torch.load(CHECKPOINT_PATH, map_location=device))
-        print("Trained U-Net weights loaded successfully.")
-    except Exception as e:
-        print(f"Weights load warning: {e}")
-else:
-    for m in unet_model.modules():
-        if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
-            nn.init.xavier_uniform_(m.weight)
-
-unet_model.eval()
 
 CLASS_COLORS = {
     0: [6, 182, 212],    # Water (Cyan)
@@ -94,8 +33,8 @@ def array_to_base64_png(rgb_array: np.ndarray) -> str:
 
 def classify_satellite_raster(image_bytes: bytes, is_georeferenced: bool = True) -> Dict[str, Any]:
     """
-    Executes true neural inference on raster bands.
-    Calculates exact NDVI, NDWI, Cloud cover, and Softmax confidence.
+    Classifies raster bands and calculates spectral indicators.
+    Calculates NDVI, NDWI, cloud cover, and spectral classification confidence.
     """
     img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     w, h = img.size
@@ -126,12 +65,7 @@ def classify_satellite_raster(image_bytes: bytes, is_georeferenced: bool = True)
     ndwi = (b03 - b08) / denom_ndwi
     mean_ndwi = round(float(np.mean(ndwi[valid_mask])) if np.any(valid_mask) else 0.0, 2)
 
-    tensor_in = torch.from_numpy(np.stack([b02, b03, b04, b08], axis=0)).unsqueeze(0).to(device)
-    with torch.no_grad():
-        logits = unet_model(tensor_in)
-        probs = F.softmax(logits, dim=1).squeeze(0).cpu().numpy()
-
-    # Physics prior integration
+    # Classify pixels from multispectral thresholds.
     prior = np.zeros((5, target_size, target_size), dtype=np.float32)
     is_water = (ndwi > -0.05) | ((b04 < 0.28) & (b08 < 0.32) & (b02 > 0.20))
     prior[0] = np.clip(np.where(is_water & valid_mask, 0.90, 0.05), 0, 1)
@@ -140,7 +74,7 @@ def classify_satellite_raster(image_bytes: bytes, is_georeferenced: bool = True)
     prior[3] = np.clip(np.where((ndvi <= 0.14) & (b04 > 0.25) & ~is_water & valid_mask, 0.80, 0.05), 0, 1)
     prior[4] = np.clip(np.where((prior[0] < 0.2) & (prior[1] < 0.2) & (prior[2] < 0.2) & (prior[3] < 0.2) & valid_mask, 0.70, 0.05), 0, 1)
 
-    combined = probs[:5] * 0.35 + prior * 0.65
+    combined = prior
     pred_map = np.argmax(combined, axis=0).astype(np.uint8)
     pred_map[cloud_mask] = 5
 
@@ -187,7 +121,7 @@ def classify_satellite_raster(image_bytes: bytes, is_georeferenced: bool = True)
             "color": c["color"]
         })
 
-    model_status = "Model validation accuracy: 91.8% on held-out dataset" if MODEL_VALIDATED else "Model validation metrics: Not available (Awaiting ground truth deployment)"
+    classification_status = "Spectral rule classification; validation requires ground-truth deployment"
 
     return {
         "dimensions": f"{w} x {h} pixels",
@@ -200,8 +134,8 @@ def classify_satellite_raster(image_bytes: bytes, is_georeferenced: bool = True)
         "cloud_cover_pct": cloud_cover_pct,
         "valid_area_pct": round(100.0 - cloud_cover_pct, 1),
         "mean_prediction_confidence": f"{mean_conf * 100:.1f}%",
-        "model_validation_metrics": model_status,
+        "classification_status": classification_status,
         "classes": class_distribution,
         "mask_image_b64": mask_b64,
-        "provenance": "PyTorch Multispectral U-Net (B02, B03, B04, B08)"
+        "provenance": "Multispectral Classification (B02, B03, B04, B08)"
     }
